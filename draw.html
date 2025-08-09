@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pinch n Draw</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4f6f9;
+        --card: #ffffff;
+        --muted: #6b7280;
+        --accent: #0f62fe;
+        --glass: rgba(255, 255, 255, 0.6);
+        --shadow: 0 6px 18px rgba(15, 22, 39, 0.08);
+      }
+      body.dark {
+        --bg: #121212;
+        --card: #1e1e1e;
+        --muted: #9ca3af;
+        --accent: #4f8cff;
+        --glass: rgba(255, 255, 255, 0.1);
+        color: #f3f4f6;
+        background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+        margin: 0;
+        background: linear-gradient(180deg, #f7fafc 0%, #f4f6f9 100%);
+        color: #0f1724;
+      }
+      .app {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 20px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo img {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0;
+      }
+      .subtitle {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 18px;
+        margin-top: 18px;
+      }
+      .viewer {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+      }
+      .sidebar {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: var(--shadow);
+        height: fit-content;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .btn {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn.ghost {
+        background: transparent;
+        border: 1px solid #e6eefc;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .btn.warn {
+        background: #ef4444;
+      }
+      .label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .small {
+        font-size: 13px;
+      }
+
+      .canvas-wrap {
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #111;
+      }
+      video {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 640px;
+        object-fit: cover;
+        transform: scaleX(-1);
+      }
+      canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        touch-action: none;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .swatch {
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        cursor: pointer;
+      }
+      .range {
+        width: 140px;
+      }
+      .footer-note {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+
+      .status {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 99px;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      .status-on {
+        background: #16a34a;
+      }
+      .status-off {
+        background: #d1d5db;
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          order: 2;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <div class="brand">
+          <div
+            class="logo"
+            style="
+              background: linear-gradient(135deg, var(--accent), #6bd1ff);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 44px;
+              height: 44px;
+              box-shadow: var(--shadow);
+            "
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                fill="white"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1>Pinch n Draw</h1>
+            <div class="subtitle">
+              Draw using pinch gestures, pinch your thumb and index finger to
+              draw on the screen.
+            </div>
+          </div>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 8px">
+          <button class="btn" id="saveBtnTop">Export PNG</button>
+          <button class="btn ghost" id="themeToggle">Dark/Light</button>
+        </div>
+      </header>
+
+      <div class="layout">
+        <div class="viewer">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            "
+          >
+            <div class="toolbar">
+              <div style="display: flex; gap: 8px; align-items: center">
+                <label class="label">Brush</label>
+                <input
+                  type="range"
+                  id="widthSlider"
+                  class="range"
+                  min="1"
+                  max="80"
+                  value="6"
+                />
+                <div id="widthValue" class="small">6px</div>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center">
+                <label class="label">Color</label>
+                <input
+                  type="color"
+                  id="colorPicker"
+                  value="#ff3b30"
+                  style="
+                    width: 44px;
+                    height: 34px;
+                    padding: 0;
+                    border-radius: 6px;
+                    border: none;
+                  "
+                />
+                <div
+                  id="presetColors"
+                  style="display: flex; gap: 6px; margin-left: 6px"
+                ></div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px">
+              <button class="btn ghost" id="undoBtn">Undo</button>
+              <button class="btn ghost" id="redoBtn">Redo</button>
+              <button class="btn ghost" id="clearBtn">Clear</button>
+              <button class="btn ghost" id="eraserBtn">Erase</button>
+            </div>
+          </div>
+
+          <div class="canvas-wrap" id="canvasWrap">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="guide"></canvas>
+            <canvas id="draw"></canvas>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 10px;
+              align-items: center;
+            "
+          >
+            <div class="status">
+              <span class="status-dot status-off" id="drawDot"></span
+              ><span id="drawText">Not Drawing</span>
+            </div>
+            <div class="footer-note">
+              Tip: Pinch index finger + thumb to draw. Keyboard: U = Undo · R =
+              Redo · C = Clear.
+            </div>
+          </div>
+        </div>
+
+        <aside class="sidebar">
+          <h3 style="margin: 0 0 8px 0">Session Controls</h3>
+          <div class="controls">
+            <div class="row"><div class="label">Camera resolution</div></div>
+            <div class="row small">
+              <select
+                id="res"
+                style="
+                  padding: 8px;
+                  border-radius: 8px;
+                  border: 1px solid #e6eefc;
+                "
+              >
+                <option value="640">640x480 (default)</option>
+                <option value="1280">1280x720</option>
+              </select>
+            </div>
+
+            <div style="margin-top: 8px">
+              <div class="label">History</div>
+              <div class="small" id="historyInfo">0 steps saved</div>
+            </div>
+
+            <div style="margin-top: 12px">
+              <h4 style="margin: 0 0 6px 0">About</h4>
+              <div class="small" style="color: var(--muted)">
+                Works well in all browsers. Allow camera access when prompted.
+                For privacy, no data leaves your browser.
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+    <script>
+      const video = document.getElementById("video");
+      const guide = document.getElementById("guide");
+      const drawCanvas = document.getElementById("draw");
+      const gctx = guide.getContext("2d");
+      const dctx = drawCanvas.getContext("2d");
+
+      const colorPicker = document.getElementById("colorPicker");
+      const widthSlider = document.getElementById("widthSlider");
+      const widthValue = document.getElementById("widthValue");
+      const undoBtn = document.getElementById("undoBtn");
+      const redoBtn = document.getElementById("redoBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const saveBtnTop = document.getElementById("saveBtnTop");
+      const presetColors = document.getElementById("presetColors");
+      const drawDot = document.getElementById("drawDot");
+      const drawText = document.getElementById("drawText");
+      const historyInfo = document.getElementById("historyInfo");
+      const eraserBtn = document.getElementById("eraserBtn");
+      const resSelect = document.getElementById("res");
+      const themeToggle = document.getElementById("themeToggle");
+
+      let color = colorPicker.value;
+      let width = Number(widthSlider.value);
+      let lastPos = null;
+      let drawing = false;
+      let eraser = false;
+
+      const history = [];
+      const redoStack = [];
+      const HISTORY_LIMIT = 80;
+
+      function updateHistoryInfo() {
+        historyInfo.textContent = `${history.length} steps saved`;
+      }
+
+      const presets = [
+        "#000000",
+        "#0f62fe",
+        "#ff3b30",
+        "#ff8c42",
+        "#16a34a",
+        "#7c3aed",
+        "#0aa3a3",
+      ];
+      presets.forEach((c) => {
+        const s = document.createElement("div");
+        s.className = "swatch";
+        s.style.background = c;
+        s.title = c;
+        s.addEventListener("click", () => {
+          color = c;
+          colorPicker.value = c;
+          eraser = false;
+          eraserBtn.textContent = "Erase";
+        });
+        presetColors.appendChild(s);
+      });
+
+      colorPicker.addEventListener("input", (e) => {
+        color = e.target.value;
+        eraser = false;
+        eraserBtn.textContent = "Erase";
+      });
+      widthSlider.addEventListener("input", (e) => {
+        width = Number(e.target.value);
+        widthValue.textContent = width + "px";
+      });
+      undoBtn.addEventListener("click", undo);
+      redoBtn.addEventListener("click", redo);
+      clearBtn.addEventListener("click", clearAll);
+      saveBtnTop.addEventListener("click", savePNG);
+      eraserBtn.addEventListener("click", () => {
+        eraser = !eraser;
+        eraserBtn.textContent = eraser ? "Draw" : "Erase";
+      });
+      resSelect.addEventListener("change", () => {
+        restartCamera();
+      });
+      themeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "u") undo();
+        if (e.key.toLowerCase() === "r") redo();
+        if (e.key.toLowerCase() === "c") clearAll();
+      });
+
+      function clearAll() {
+        pushHistory();
+        dctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      }
+      function savePNG() {
+        const url = drawCanvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "hand-draw.png";
+        a.click();
+      }
+      function pushHistory() {
+        try {
+          const img = dctx.getImageData(
+            0,
+            0,
+            drawCanvas.width,
+            drawCanvas.height
+          );
+          history.push(img);
+          if (history.length > HISTORY_LIMIT) history.shift();
+          redoStack.length = 0;
+          updateHistoryInfo();
+        } catch (e) {
+          console.warn("History push failed", e);
+        }
+      }
+      function undo() {
+        if (history.length > 0) {
+          const img = history.pop();
+          redoStack.push(
+            dctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height)
+          );
+          dctx.putImageData(img, 0, 0);
+          updateHistoryInfo();
+        }
+      }
+      function redo() {
+        if (redoStack.length > 0) {
+          const img = redoStack.pop();
+          history.push(
+            dctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height)
+          );
+          dctx.putImageData(img, 0, 0);
+          updateHistoryInfo();
+        }
+      }
+
+      const hands = new Hands({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.6,
+      });
+
+      hands.onResults((results) => {
+        const w = video.videoWidth || 640;
+        const h = video.videoHeight || 480;
+        [guide, drawCanvas].forEach((c) => {
+          if (c.width !== w || c.height !== h) {
+            c.width = w;
+            c.height = h;
+          }
+        });
+
+        gctx.clearRect(0, 0, guide.width, guide.height);
+        if (
+          results.multiHandLandmarks &&
+          results.multiHandLandmarks.length > 0
+        ) {
+          const lm = results.multiHandLandmarks[0];
+          drawConnectors(gctx, lm, HAND_CONNECTIONS, { lineWidth: 2 });
+          drawLandmarks(gctx, lm, { radius: 2 });
+
+          const ix = (1 - lm[8].x) * drawCanvas.width;
+          const iy = lm[8].y * drawCanvas.height;
+          const tx = (1 - lm[4].x) * drawCanvas.width;
+          const ty = lm[4].y * drawCanvas.height;
+
+          const dx = ix - tx,
+            dy = iy - ty;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const normDist = dist / Math.max(drawCanvas.width, drawCanvas.height);
+
+          const pinchThreshold = 0.05;
+          const shouldDraw = normDist < pinchThreshold;
+
+          if (shouldDraw) {
+            drawDot.classList.remove("status-off");
+            drawDot.classList.add("status-on");
+            drawText.textContent = "Drawing";
+
+            if (!drawing) {
+              pushHistory();
+              drawing = true;
+              lastPos = { x: ix, y: iy };
+            } else {
+              if (lastPos) {
+                dctx.save();
+                if (eraser) {
+                  dctx.globalCompositeOperation = "destination-out";
+                  dctx.beginPath();
+                  dctx.arc(ix, iy, width / 2, 0, Math.PI * 2);
+                  dctx.fill();
+                  gctx.beginPath();
+                  gctx.strokeStyle = "red";
+                  gctx.lineWidth = 1;
+                  gctx.arc(ix, iy, width / 2, 0, Math.PI * 2);
+                  gctx.stroke();
+                } else {
+                  dctx.globalCompositeOperation = "source-over";
+                  dctx.lineJoin = "round";
+                  dctx.lineCap = "round";
+                  dctx.lineWidth = width;
+                  dctx.strokeStyle = color;
+                  dctx.beginPath();
+                  dctx.moveTo(lastPos.x, lastPos.y);
+                  dctx.lineTo(ix, iy);
+                  dctx.stroke();
+                }
+                dctx.restore();
+                lastPos = { x: ix, y: iy };
+              }
+            }
+          } else {
+            drawing = false;
+            lastPos = null;
+            drawDot.classList.remove("status-on");
+            drawDot.classList.add("status-off");
+            drawText.textContent = "Not Drawing";
+          }
+        } else {
+          drawing = false;
+          lastPos = null;
+          drawDot.classList.remove("status-on");
+          drawDot.classList.add("status-off");
+          drawText.textContent = "No Hand Detected";
+        }
+      });
+
+      let camera = null;
+      async function startCamera() {
+        const res = Number(resSelect.value) || 640;
+        if (camera) {
+          camera.stop();
+          camera = null;
+        }
+        camera = new Camera(video, {
+          onFrame: async () => {
+            await hands.send({ image: video });
+          },
+          width: res,
+          height: res === 1280 ? 720 : 480,
+        });
+        await camera.start();
+      }
+
+      async function restartCamera() {
+        try {
+          await startCamera();
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+
+      (async () => {
+        widthValue.textContent = width + "px";
+        try {
+          await startCamera();
+        } catch (e) {
+          console.error("Camera start failed", e);
+          alert("Camera access is required. Check permissions.");
+        }
+      })();
+
+      window.handdraw = { pushHistory, undo, redo, savePNG };
+    </script>
+  </body>
+</html>
+
