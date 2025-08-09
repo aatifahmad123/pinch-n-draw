@@ -1,6 +1,8 @@
 # Pinch n Draw
 
-Draw using pinch gestures, pinch your thumb and index finger to draw on the screen. Export your drawings as images. 
+Draw using pinch gestures, pinch your thumb and index finger to draw on the screen. Export your drawings as images.
+
+![Pinch n Draw](./demo.png)
 
 ## Features
 
@@ -10,7 +12,7 @@ Draw using pinch gestures, pinch your thumb and index finger to draw on the scre
 
 ## Usage
 
-1. Open `draw.html` in your browser.
+1. Open `index.html` in your browser.
 2. Select brush color and size.
 3. Draw on the canvas.
 4. Click "Clear" to reset the canvas.
@@ -19,9 +21,6 @@ Draw using pinch gestures, pinch your thumb and index finger to draw on the scre
 
 - Modern web browser (Chrome, Firefox, Edge, etc.)
 
-## File Structure
+## Contributing
 
-```
-├── draw.html
-└── Readme.md
-```
+Contributions are welcome! Please fork the repository and submit a pull request.
